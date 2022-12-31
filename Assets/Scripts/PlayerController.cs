@@ -14,6 +14,7 @@ public class PlayerController : MonoBehaviour
     public LayerMask groundMask;
     Rigidbody2D playerRigidBody;
     Animator animator;
+    Vector3 startPossition;
 
     void Awake()
     {
@@ -24,40 +25,54 @@ public class PlayerController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        animator.SetBool(STATE_ALIVE, true);
-        animator.SetBool(STATE_ON_THE_GROUND, false);
+        startPossition = this.transform.position;
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Space) || Input.GetMouseButtonDown(1))
+        if (Input.GetButtonDown("Jump") && GameManager.sharedInstance.InGame())
             Jump();
 
-        animator.SetBool(STATE_ON_THE_GROUND, IsTouchindTheGround());
+        bool isTouchingTheGround = IsTouchindTheGround();
+        
+        animator.SetBool(STATE_ON_THE_GROUND, isTouchingTheGround);
 
         Debug.DrawRay(this.transform.position, Vector2.down * 1.5f, Color.red);
     }
 
     void FixedUpdate()
     {
-        if ((Input.GetKey(KeyCode.RightArrow) || Input.GetKey(KeyCode.D)) && playerRigidBody.velocity.x < runningSpeed)
+        if (GameManager.sharedInstance.InGame())
         {
-            playerRigidBody.velocity = new Vector2(runningSpeed, playerRigidBody.velocity.y);
-        }
-        else if((Input.GetKey(KeyCode.LeftArrow) || Input.GetKey(KeyCode.A)) && playerRigidBody.velocity.x < runningSpeed)
-        {
-            playerRigidBody.velocity = new Vector2(-1 * runningSpeed, playerRigidBody.velocity.y);
-        }
+            float direction = Input.GetAxis("Horizontal");
+            SpriteRenderer spriteRenderer = GetComponent<SpriteRenderer>();
 
-        if (Input.GetAxis("Horizontal") < 0)
-        {
-            GetComponent<SpriteRenderer>().flipX = true;
+            if (Input.GetButton("Horizontal") && direction >= 0 && playerRigidBody.velocity.x < runningSpeed)
+            {
+                spriteRenderer.flipX = false;
+                playerRigidBody.velocity = new Vector2(runningSpeed, playerRigidBody.velocity.y);
+            }
+            else if (Input.GetButton("Horizontal") && direction < 0 && playerRigidBody.velocity.x < runningSpeed)
+            {
+                spriteRenderer.flipX = true;
+                playerRigidBody.velocity = new Vector2(-1 * runningSpeed, playerRigidBody.velocity.y);
+            }
         }
-        else
-        {
-            GetComponent<SpriteRenderer>().flipX = false;
-        }
+    }
+
+    public void StartGame()
+    {
+        animator.SetBool(STATE_ALIVE, true);
+        animator.SetBool(STATE_ON_THE_GROUND, true);
+
+        Invoke("RestarPosition", 0.1f);
+    }
+
+    private void RestarPosition()
+    {
+        this.transform.position = startPossition;
+        this.playerRigidBody.velocity = Vector2.zero;
     }
 
     void Jump()
@@ -75,5 +90,11 @@ public class PlayerController : MonoBehaviour
     bool IsTouchindTheGround()
     {
         return Physics2D.Raycast(this.transform.position, Vector2.down, 1.5f, groundMask);
+    }
+
+    public void Die()
+    {
+        animator.SetBool(STATE_ALIVE, false);
+        GameManager.sharedInstance.GameOver();
     }
 }
