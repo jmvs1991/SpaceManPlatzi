@@ -9,6 +9,8 @@ public class PlayerController : MonoBehaviour
     const string STATE_ON_THE_GROUND = "isOnTheGround";
 
     public float jumpForce = 6f;
+    public float runningSpeed = 2f;
+
     public LayerMask groundMask;
     Rigidbody2D playerRigidBody;
     Animator animator;
@@ -35,6 +37,27 @@ public class PlayerController : MonoBehaviour
         animator.SetBool(STATE_ON_THE_GROUND, IsTouchindTheGround());
 
         Debug.DrawRay(this.transform.position, Vector2.down * 1.5f, Color.red);
+    }
+
+    void FixedUpdate()
+    {
+        if ((Input.GetKey(KeyCode.RightArrow) || Input.GetKey(KeyCode.D)) && playerRigidBody.velocity.x < runningSpeed)
+        {
+            playerRigidBody.velocity = new Vector2(runningSpeed, playerRigidBody.velocity.y);
+        }
+        else if((Input.GetKey(KeyCode.LeftArrow) || Input.GetKey(KeyCode.A)) && playerRigidBody.velocity.x < runningSpeed)
+        {
+            playerRigidBody.velocity = new Vector2(-1 * runningSpeed, playerRigidBody.velocity.y);
+        }
+
+        if (Input.GetAxis("Horizontal") < 0)
+        {
+            GetComponent<SpriteRenderer>().flipX = true;
+        }
+        else
+        {
+            GetComponent<SpriteRenderer>().flipX = false;
+        }
     }
 
     void Jump()
