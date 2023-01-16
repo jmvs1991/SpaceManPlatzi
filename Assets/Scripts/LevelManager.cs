@@ -6,7 +6,7 @@ using UnityEngine;
 public class LevelManager : MonoBehaviour
 {
 
-    public LevelManager sharedInstance;
+    public static LevelManager sharedInstance;
     public List<LevelBlockController> allTheLevelBlocks = new List<LevelBlockController>();
     public List<LevelBlockController> currentLevelBlocks = new List<LevelBlockController>();
     public Transform startPosition;
@@ -57,13 +57,24 @@ public class LevelManager : MonoBehaviour
         currentLevelBlocks.Add(block);
     }
 
-    public void RemoveLevelBlock() { }
+    public void RemoveLevelBlock() 
+    {
+        LevelBlockController oldBlock = currentLevelBlocks[0];
+        currentLevelBlocks.Remove(oldBlock);
+        Destroy(oldBlock.gameObject);
+    }
 
-    public void RemoveAllLevelBlocks() { }
+    public void RemoveAllLevelBlocks() 
+    {
+        while(currentLevelBlocks.Count > 0) 
+        {
+            RemoveLevelBlock();
+        }
+    }
 
     public void GenerateInitialBlocks() 
     {
-        for(int i = 0; i < 3; i++) 
+        for(int i = 0; i < 2; i++) 
         {
             AddLevelBlock();
         }

@@ -12,16 +12,15 @@ public enum GameState
 public class GameManager : MonoBehaviour
 {
     public GameState currentGameState = GameState.menu;
-
     public static GameManager sharedInstance;
+    public int collectedObject = 0;
+
     PlayerController playerController;
 
     void Awake()
     {
         if (sharedInstance == null)
-        {
             sharedInstance = this;
-        }    
     }
 
     // Start is called before the first frame update
@@ -66,16 +65,23 @@ public class GameManager : MonoBehaviour
     {
         if (newGameState == GameState.menu)
         {
-            //TODO: colocar la logica del menu
+            MenuManager.sharedInstance.GameMenu(false);
+            MenuManager.sharedInstance.GameOverMenu(false);
+            MenuManager.sharedInstance.MainMenu(true);
         }
         else if (newGameState == GameState.inGame)
         {
-            playerController.StartGame();
-            //TODO: preparar la escena
+            LevelManager.sharedInstance.RemoveAllLevelBlocks();
+            Invoke("ReloadLevel", 0.1f);
+            MenuManager.sharedInstance.MainMenu(false);
+            MenuManager.sharedInstance.GameOverMenu(false);
+            MenuManager.sharedInstance.GameMenu(true);
         }
         else if (newGameState == GameState.gameOver)
         {
-            //TODO: 
+            MenuManager.sharedInstance.GameMenu(false);
+            MenuManager.sharedInstance.MainMenu(false);
+            MenuManager.sharedInstance.GameOverMenu(true);
         }
 
         this.currentGameState = newGameState;
@@ -84,5 +90,16 @@ public class GameManager : MonoBehaviour
     public bool InGame()
     {
         return currentGameState == GameState.inGame;
+    }
+
+    private void ReloadLevel()
+    {
+        LevelManager.sharedInstance.GenerateInitialBlocks();
+        playerController.StartGame();
+    }
+
+    public void CollectObject(CollectableController collectable)
+    {
+        collectedObject += collectable.value;
     }
 }
