@@ -1,29 +1,27 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-public class GameViewController : MonoBehaviour
+public class GameOverViewController : MonoBehaviour
 {
-    public Text scoreText, coinsText, maxScoreText;
+    public Text coinsText, scoreText;
     PlayerController playerController;
 
     // Start is called before the first frame update
     void Start()
     {
-        playerController= GameObject.Find("Player").GetComponent<PlayerController>();
+        playerController = GameObject.Find("Player").GetComponent<PlayerController>();
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (GameManager.sharedInstance.currentGameState == GameState.inGame)
+        if (GameManager.sharedInstance.currentGameState == GameState.gameOver)
         {
             int coins = GameManager.sharedInstance.collectedObject;
             float score = playerController.GetTravelDistance();
-            float maxScore = PlayerPrefs.GetFloat("maxScore", 0f);
 
             coinsText.text = $"{coins}";
             scoreText.text = $"Score: {score: 0.00}";
-            maxScoreText.text = $"MaxScore: {maxScore: 0.00}";
         }
     }
 }

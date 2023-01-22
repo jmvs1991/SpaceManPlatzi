@@ -7,14 +7,20 @@ public class PlayerController : MonoBehaviour
 
     const string STATE_ALIVE = "isAlive";
     const string STATE_ON_THE_GROUND = "isOnTheGround";
+
+    [SerializeField]
     private int healthPoints, manaPoints;
 
-    const int INITIAL_HEALTH = 100, INITIAL_MANA = 15;
-    const int MAX_HEALTH = 200, MAX_MANA = 30, 
+    public const int INITIAL_HEALTH = 100, INITIAL_MANA = 15;
+    public const int MAX_HEALTH = 200, MAX_MANA = 30, 
               MIN_HEALTH = 10, MIN_MANA = 0;
+
+    public const int SUPER_JUM_COST = 5;
+    public const float SUPER_JUM_FORCE = 1.5F;
 
     public float jumpForce = 6f;
     public float runningSpeed = 2f;
+    public float jumpRaycastDistance = 1.5f;
 
     public LayerMask groundMask;
     Rigidbody2D playerRigidBody;
@@ -36,14 +42,17 @@ public class PlayerController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetButtonDown("Jump") && GameManager.sharedInstance.InGame())
-            Jump();
+        if (Input.GetButtonDown("Jump"))
+            Jump(false);
+
+        if(Input.GetButtonDown("SuperJump"))
+            Jump(true);
 
         bool isTouchingTheGround = IsTouchindTheGround();
         
         animator.SetBool(STATE_ON_THE_GROUND, isTouchingTheGround);
 
-        Debug.DrawRay(this.transform.position, Vector2.down * 1.5f, Color.red);
+        Debug.DrawRay(this.transform.position, Vector2.down * jumpRaycastDistance, Color.red);
     }
 
     void FixedUpdate()
@@ -86,12 +95,26 @@ public class PlayerController : MonoBehaviour
         mainCamera.GetComponent<CameraFollowController>().ResetCameraPossition();
     }
 
-    void Jump()
+    void Jump(bool isSuperJump)
     {
-        if (IsTouchindTheGround())
+        if (GameManager.sharedInstance.InGame())
         {
-            playerRigidBody.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
+            if (IsTouchindTheGround())
+            {
+                GetComponent<AudioSource>().Play();
+
+                float jumpForceFactor = jumpForce;
+
+                if (isSuperJump && manaPoints >= SUPER_JUM_COST)
+                {
+                    manaPoints -= SUPER_JUM_COST;
+                    jumpForceFactor *= SUPER_JUM_FORCE;
+                }
+
+                playerRigidBody.AddForce(Vector2.up * jumpForceFactor, ForceMode2D.Impulse);
+            }
         }
+        
     }
 
     /// <summary>
@@ -100,11 +123,17 @@ public class PlayerController : MonoBehaviour
     /// <returns></returns>
     bool IsTouchindTheGround()
     {
-        return Physics2D.Raycast(this.transform.position, Vector2.down, 1.5f, groundMask);
+        return Physics2D.Raycast(this.transform.position, Vector2.down, jumpRaycastDistance, groundMask);
     }
 
     public void Die()
     {
+        float travelDistance = GetTravelDistance();
+        float previousMaxDistance = PlayerPrefs.GetFloat("maxScore", 0f);
+
+        if (travelDistance > previousMaxDistance)
+            PlayerPrefs.SetFloat("maxScore", travelDistance);
+        
         animator.SetBool(STATE_ALIVE, false);
         GameManager.sharedInstance.GameOver();
     }
@@ -115,6 +144,9 @@ public class PlayerController : MonoBehaviour
 
         if(healthPoints > MAX_HEALTH)
             healthPoints = MAX_HEALTH;
+
+        if (healthPoints <= 0)
+            Die();
     }
 
     public void CollectMana(int points)
@@ -133,5 +165,10 @@ public class PlayerController : MonoBehaviour
     public int GetMana()
     {
         return manaPoints;
+    }
+
+    public float GetTravelDistance()
+    {
+        return this.transform.position.x - startPossition.x;
     }
 }
